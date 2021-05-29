@@ -6,6 +6,7 @@ import { fetchWebPipe } from '../../../utils/fetchWebPipe';
 import { fetchNui } from '../../../utils/fetchNui';
 import { useDialogContext } from '../../../provider/DialogProvider';
 import { useSnackbar } from 'notistack';
+import { useTranslate } from "react-polyglot";
 
 const DialogActionView: React.FC = () => {
   const classes = useStyles();
@@ -13,6 +14,7 @@ const DialogActionView: React.FC = () => {
   const playerDetails = usePlayerDetailsValue()
   const assocPlayer = useAssociatedPlayerValue()
   const { enqueueSnackbar } = useSnackbar()
+  const t = useTranslate();
 
   const handleDM = () => {
     openDialog({
@@ -109,7 +111,7 @@ const DialogActionView: React.FC = () => {
         <Button variant="outlined" color="primary" onClick={handleKick}>Kick</Button>
         <Button variant="outlined" color="primary">Set Admin</Button>
       </Box>
-      <Typography style={{ paddingBottom: 5 }}>Interaction</Typography>
+      <Typography style={{ paddingBottom: 5 }}>{t("nui_menu.player_modal.actions.interaction.category_title_2")}</Typography>
       <Box className={classes.actionGrid}>
         <Button variant="outlined" color="primary" onClick={handleHeal}>Heal</Button>
         <Button variant="outlined" color="primary" onClick={handleGoTo}>Go to</Button>
