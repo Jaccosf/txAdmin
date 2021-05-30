@@ -6,22 +6,7 @@ import { fetchWebPipe } from '../../../utils/fetchWebPipe';
 import { fetchNui } from '../../../utils/fetchNui';
 import { useDialogContext } from '../../../provider/DialogProvider';
 import { useSnackbar } from 'notistack';
-<<<<<<< HEAD
 import { useTranslate } from "react-polyglot";
-=======
-import { useIFrameCtx} from "../../../provider/IFrameProvider";
-import slug from 'slug'
-import { usePlayerModalContext } from '../../../provider/PlayerModalProvider';
-import { translateAlertType } from '../../../utils/miscUtils';
-import { useTranslate } from "react-polyglot";
-
-export type TxAdminActionRespType = 'success' | 'warning' | 'danger'
-
-interface txAdminActionResp {
-  type: TxAdminActionRespType
-  message: string
-}
->>>>>>> 94fcb9678d67869e992e1908a782734b9703dafe
 
 const DialogActionView: React.FC = () => {
   const classes = useStyles();
@@ -30,11 +15,6 @@ const DialogActionView: React.FC = () => {
   const assocPlayer = useAssociatedPlayerValue()
   const { enqueueSnackbar } = useSnackbar()
   const t = useTranslate();
-<<<<<<< HEAD
-=======
-  const { goToFramePage } = useIFrameCtx()
-  const { setModalOpen } = usePlayerModalContext()
->>>>>>> 94fcb9678d67869e992e1908a782734b9703dafe
 
   const handleDM = () => {
     openDialog({
@@ -42,17 +22,17 @@ const DialogActionView: React.FC = () => {
       description: 'What is the reason for direct messaging this player?',
       placeholder: 'Reason...',
       onSubmit: (reason: string) => {
-        fetchWebPipe<txAdminActionResp>('/player/message', {
+        fetchWebPipe('/player/kick', {
           method: 'POST',
           data: {
             id: assocPlayer.id,
-            message: reason
+            reason: reason
           }
         }).then(resp => {
-          enqueueSnackbar(resp.message, { variant: translateAlertType(resp.type) })
+          // TODO: Handle response
+          enqueueSnackbar('Warned player!', { variant: 'success' })
         }).catch(e => {
-          enqueueSnackbar('An unknown error occurred', { variant: 'error' })
-          console.error(e)
+          enqueueSnackbar('Warned player!', { variant: 'success' })
         })
       }
     })
@@ -64,7 +44,7 @@ const DialogActionView: React.FC = () => {
       description: 'What is the reason for direct warning this player?',
       placeholder: 'Reason...',
       onSubmit: (reason: string) => {
-        fetchWebPipe('/player/warn', {
+        fetchWebPipe('/player/kick', {
           method: 'POST',
           data: {
             id: assocPlayer.id,
@@ -72,10 +52,9 @@ const DialogActionView: React.FC = () => {
           }
         }).then(resp => {
           // TODO: Handle response
-          enqueueSnackbar(resp.message, { variant: translateAlertType(resp.type) })
+          enqueueSnackbar('Warned player!', { variant: 'success' })
         }).catch(e => {
-          enqueueSnackbar('An unknown error occurred', { variant: 'error' })
-          console.error(e)
+          enqueueSnackbar('Warned player!', { variant: 'success' })
         })
       }
     })
@@ -95,10 +74,9 @@ const DialogActionView: React.FC = () => {
           }
         }).then(resp => {
           // TODO: Handle response
-          enqueueSnackbar(resp.message, { variant: translateAlertType(resp.type) })
+          enqueueSnackbar('Kicked player!', { variant: 'success' })
         }).catch(e => {
-          enqueueSnackbar('An unknown error has occured', { variant: 'error' })
-          console.error(e)
+
         })
       }
     })
@@ -106,32 +84,18 @@ const DialogActionView: React.FC = () => {
 
   const handleSetAdmin = () => {
     // TODO: Change iFrame Src through Provider?
-    const discordIdent = playerDetails.identifiers.find(ident => ident.includes('discord:'))
-    const fivemIdent = playerDetails.identifiers.find(ident => ident.includes('fivem:'))
-
-    const sluggedName = slug(assocPlayer.username, '_')
-
-    let adminManagerPath = `?autofill&name=${sluggedName}`
-    if (discordIdent) adminManagerPath = adminManagerPath + `&discord=${discordIdent}`
-    if (fivemIdent) adminManagerPath = adminManagerPath + `&fivem=${fivemIdent}`
-
-    goToFramePage(`/adminManager/${adminManagerPath}`)
-    setModalOpen(false)
   }
 
   const handleHeal = () => {
     fetchNui('healPlayer', { id: assocPlayer.id })
-    enqueueSnackbar('Healing player', {variant: 'success'})
   }
 
   const handleGoTo = () => {
     fetchNui('tpToPlayer', { id: assocPlayer.id })
-    enqueueSnackbar('Teleporting to player', {variant: 'success'})
   }
 
   const handleBring = () => {
     fetchNui('summonPlayer', { id: assocPlayer.id })
-    enqueueSnackbar('Summoning player.', {variant: 'success'})
   }
 
 
@@ -145,7 +109,7 @@ const DialogActionView: React.FC = () => {
         <Button variant="outlined" color="primary" onClick={handleDM}>DM</Button>
         <Button variant="outlined" color="primary" onClick={handleWarn}>Warn</Button>
         <Button variant="outlined" color="primary" onClick={handleKick}>Kick</Button>
-        <Button variant="outlined" color="primary" onClick={handleSetAdmin}>Set Admin</Button>
+        <Button variant="outlined" color="primary">Set Admin</Button>
       </Box>
       <Typography style={{ paddingBottom: 5 }}>{t("nui_menu.player_modal.actions.interaction.category_title_2")}</Typography>
       <Box className={classes.actionGrid}>

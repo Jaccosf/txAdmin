@@ -93,7 +93,6 @@
     "@types/node": "^15.0.0",
     "@types/react": "^17.0.4",
     "@types/react-dom": "^17.0.3",
-    "@types/slug": "^5.0.0",
     "babel-loader": "^8.2.2",
     "copy-webpack-plugin": "^6.2.0",
     "css-loader": "^5.2.4",

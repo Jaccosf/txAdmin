@@ -61,6 +61,7 @@ export const HelpTooltip: React.FC = ({ children }) => {
     () => [
       "Use [TAB] to switch pages & the arrow keys to navigate menu items",
       "Certain menu items have sub options which can be selected using the left & right arrow keys",
+      "Other help tip",
     ],
     []
   );

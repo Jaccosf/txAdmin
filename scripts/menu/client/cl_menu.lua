@@ -1,11 +1,5 @@
 -- Variable that determines whether a player can even access the menu
 menuIsAccessible = false
-isMenuDebug = false
-
-CreateThread(function()
-  isMenuDebug = (GetConvar('TXADMIN_MENU_DEBUG', 'false') == 'true')
-end)
-
 -- Since the menu yields/receives keyboard
 -- focus we need to store that the menu is already visible
 local isMenuVisible
@@ -17,7 +11,7 @@ RegisterKeyMapping('txadmin', 'Open the txAdmin Menu', 'keyboard', '')
 --- Send data to the NUI frame
 ---@param action string Action
 ---@param data any Data corresponding to action
-function sendMenuMessage(action, data)
+local function sendMenuMessage(action, data)
   SendNUIMessage({
     action = action,
     data = data
@@ -42,9 +36,9 @@ end)
 --- Snackbar message
 ---@param level string The severity of the message can be 'info', 'error', or 'warning'
 ---@param message string Message to display with snackbar
-local function sendSnackbarMessage(level, message, isTranslationKey)
-  debugPrint(('Sending snackbar message, level: %s, message: %s, isTranslationKey: %s'):format(level, message, isTranslationKey))
-  sendMenuMessage('setSnackbarAlert', { level = level, message = message, isTranslationKey = isTranslationKey })
+local function sendSnackbarMessage(level, message)
+  debugPrint(('Sending snackbar message, level: %s, message: %s'):format(level, message))
+  sendMenuMessage('setSnackbarAlert', { level = level, message = message })
 end
 
 
@@ -70,13 +64,10 @@ RegisterCommand('txadmin', function()
   if menuIsAccessible then
     -- Lets update before we open the menu
     updateServerCtx()
-    sendMenuMessage('setDebugMode', isMenuDebug)
     isMenuVisible = not isMenuVisible
     SetNuiFocus(isMenuVisible, false)
     SetNuiFocusKeepInput(isMenuVisible)
     sendMenuMessage('setVisible', isMenuVisible)
-  else
-    sendSnackbarMessage('error', 'nui_menu.misc.menu_not_allowed', true)
   end
 end)
 
@@ -134,8 +125,8 @@ RegisterNUICallback('tpToWaypoint', function(_, cb)
   cb({})
 end)
 
-RegisterNUICallback('tpToPlayer', function(data, cb)
-  TriggerServerEvent('txAdmin:menu:tpToPlayer', data.id)
+RegisterNUICallback('tpToPlayer', function(id, cb)
+  TriggerServerEvent('txAdmin:menu:tpToPlayer', id)
   cb({})
 end)
 
@@ -148,8 +139,8 @@ RegisterNUICallback('tpBack', function(_, cb)
   end
 end)
 
-RegisterNUICallback('summonPlayer', function(data, cb)
-  TriggerServerEvent('txAdmin:menu:summonPlayer', data.id)
+RegisterNUICallback('summonPlayer', function(id, cb)
+  TriggerServerEvent('txAdmin:menu:summonPlayer', id)
   cb({})
 end)
 
@@ -253,8 +244,8 @@ RegisterNUICallback('spawnVehicle', function(data, cb)
 end)
 
 -- CB From Menu
-RegisterNUICallback('healPlayer', function(data, cb)
-  TriggerServerEvent('txAdmin:menu:healPlayer', data.id)
+RegisterNUICallback('healPlayer', function(id, cb)
+  TriggerServerEvent('txAdmin:menu:healPlayer', id)
   cb({})
 end)
 
@@ -263,7 +254,7 @@ RegisterNUICallback('healMyself', function(_, cb)
   cb({})
 end)
 
-RegisterNUICallback('healAllPlayers', function(_, cb)
+RegisterNUICallback('healAllPlayers', function(data, cb)
   TriggerServerEvent('txAdmin:menu:healAllPlayers')
   cb({})
 end)
