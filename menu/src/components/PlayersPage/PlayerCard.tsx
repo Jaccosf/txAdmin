@@ -11,13 +11,13 @@ import {
 import {
   DirectionsBoat,
   DirectionsWalk,
-  DriveEta,
-  MoreVert,
-  Motorcycle,
+  DriveEta, LiveHelp,
+  MoreVert, Motorcycle, 
 } from "@material-ui/icons";
 import { usePlayerModalContext } from '../../provider/PlayerModalProvider';
 import { PlayerData, VehicleStatus } from "../../state/players.state";
 import { useSetAssociatedPlayer } from '../../state/playerDetails.state';
+import { formatDistance } from "../../utils/miscUtils";
 
 const useStyles = makeStyles((theme: Theme) => ({
   paper: {
@@ -49,6 +49,7 @@ const PlayerCard: React.FC<{playerData: PlayerData}> = ({playerData}) => {
   const setAssociatedPlayer = useSetAssociatedPlayer();
 
   const statusIcon: { [K in VehicleStatus]: JSX.Element } = {
+    unknown: <LiveHelp color="inherit" />,
     walking: <DirectionsWalk color="inherit" />,
     driving: <DriveEta color="inherit" />,
     boating: <DirectionsBoat color="inherit" />,
@@ -95,6 +96,14 @@ const PlayerCard: React.FC<{playerData: PlayerData}> = ({playerData}) => {
               color="textPrimary"
             >
               {playerData.username}
+            </Typography>
+            <Typography
+              style={{ marginLeft: 7 }}
+              noWrap
+              variant="subtitle1"
+              color="textSecondary"
+            >
+              {formatDistance(playerData.distance)}
             </Typography>
           </Box>
           <IconButton onClick={handlePlayerClick}>{<MoreVert />}</IconButton>

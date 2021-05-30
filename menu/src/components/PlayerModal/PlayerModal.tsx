@@ -47,7 +47,6 @@ const PlayerModal: React.FC = () => {
 
   return (
     <Dialog
-      disableEscapeKeyDown
       open={isModalOpen}
       fullWidth
       onClose={handleClose}
@@ -94,7 +93,7 @@ const useListStyles = makeStyles((theme: Theme) => ({
   },
   banRoot: {
     "&$selected, &$selected:hover": {
-      background: theme.palette.warning.main,
+      background: theme.palette.error.main,
     },
   },
   selected: {},
