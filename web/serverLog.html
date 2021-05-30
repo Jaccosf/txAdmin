@@ -5,16 +5,11 @@
     .pre-log-content{
         height: calc(100vh - 270px); /* -251px */
         margin-bottom: 0;
-        font-size: 100%;
-    }
-    .nui-height{
-        height: calc(100vh - 170px);
     }
 
     .event-source{
-        font-weight: 900 !important;
+        font-weight: 700 !important;
         text-decoration: none !important;
-        cursor: pointer;
     }
 
     /* Experimental */
@@ -31,7 +26,7 @@
 </div>
 <div class="card border-primary">
     <div class="card-body">
-        <pre id="console" class="thin-scroll pre-log-content {{[(it.isWebInterface), '', 'nui-height']|ternary}}">{{it.log|safe}}</pre>
+        <pre id="console" class="thin-scroll pre-log-content">{{it.log|safe}}</pre>
     </div>
 </div>
 

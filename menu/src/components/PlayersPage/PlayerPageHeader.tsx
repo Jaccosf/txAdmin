@@ -4,6 +4,7 @@ import {
   InputAdornment,
   makeStyles,
   MenuItem,
+  TextField,
   Theme,
   Typography,
 } from "@material-ui/core";
@@ -17,7 +18,6 @@ import {
 import { useDebounce } from "../../hooks/useDebouce";
 import { useServerCtxValue } from "../../state/server.state";
 import { useTranslate } from "react-polyglot";
-import { TextField } from '../misc/TextField';
 
 const useStyles = makeStyles((theme: Theme) => ({
   title: {

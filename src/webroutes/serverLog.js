@@ -104,7 +104,7 @@ function processPlayerData(src) {
 
     let name = xss(src.name).replace(/"/g, '&quot;');
     let identifiers = xss(src.identifiers.join(';')).replace(/"/g, '&quot;');
-    return `<span data-player-identifiers="${identifiers}" data-player-name="${name}" class="text-primary event-source">${name}</span>`;
+    return `<a href="/serverLog#!" data-player-identifiers="${identifiers}" data-player-name="${name}" class="text-primary event-source">${name}</a>`;
 }
 
 

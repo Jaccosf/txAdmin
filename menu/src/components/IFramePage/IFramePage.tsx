@@ -52,7 +52,7 @@ export const IFramePage: React.FC<{ visible: boolean }> = ({ visible }) => {
       mb={10}
       display={visible ? "initial" : "none"}
     >
-      {visible && <iframe src={trueFrameSource} className={classes.iframe} />}
+      <iframe src={trueFrameSource} className={classes.iframe} />
     </Box>
   );
 };

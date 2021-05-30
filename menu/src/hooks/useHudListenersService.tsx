@@ -42,12 +42,10 @@ export const useHudListenersService = () => {
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const t = useTranslate();
 
-  const snackFormat = (m) => <span style={{whiteSpace: 'pre-wrap'}}>{m}</span>;
-
   useNuiEvent<SnackbarAlert>(
     "setSnackbarAlert",
     ({ level, message, isTranslationKey }) => {
-      enqueueSnackbar(isTranslationKey ? snackFormat(t(message)) : snackFormat(message), {
+      enqueueSnackbar(isTranslationKey ? t(message) : message, {
         variant: level,
       });
     }
@@ -56,7 +54,7 @@ export const useHudListenersService = () => {
   useNuiEvent('showMenuHelpInfo', () => {
     const showAlert = shouldHelpAlertShow()
     if (showAlert) {
-      enqueueSnackbar(snackFormat(t('nui_menu.misc.help_message')), {
+      enqueueSnackbar(t('nui_menu.misc.help_message'), {
         variant: 'info',
         anchorOrigin: {
           horizontal: 'center',
@@ -65,7 +63,7 @@ export const useHudListenersService = () => {
         autoHideDuration: 10000
       })
     }
-  });
+  })
 
   useNuiEvent<SnackbarPersistentAlert>(
     "setPersistentAlert",

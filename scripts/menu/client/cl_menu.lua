@@ -1,12 +1,6 @@
-
 -- Variable that determines whether a player can even access the menu
 menuIsAccessible = false
 isMenuDebug = false
-
-local SoundEnum = {
-  move = 'NAV_UP_DOWN',
-  enter = 'SELECT'
-}
 
 CreateThread(function()
   isMenuDebug = (GetConvar('TXADMIN_MENU_DEBUG', 'false') == 'true')
@@ -71,46 +65,30 @@ local function clearPersistentAlert(key)
   sendMenuMessage('clearPersistentAlert', { key = key })
 end
 
---- Toggle visibility of the txAdmin NUI menu
-function toggleMenuVisibility(visible)
-  if (visible == true and isMenuVisible) or (visible == false and not isMenuVisible) then
-    return
-  end
-  if visible == nil then
-    if not isMenuVisible and IsPauseMenuActive() then
-      return
-    end
-  end
-  -- Lets update before we open the menu
-  updateServerCtx()
-  sendMenuMessage('setDebugMode', isMenuDebug)
-  if visible ~= nil then
-    isMenuVisible = visible
-    sendMenuMessage('setVisible', visible)
-  else
-    isMenuVisible = not isMenuVisible
-    sendMenuMessage('setVisible', isMenuVisible)
-  end
-  PlaySoundFrontend(-1, SoundEnum['enter'], 'HUD_FRONTEND_DEFAULT_SOUNDSET', 1)
-end
-
 -- Command to be used with the register key mapping
-local function txadmin()
+RegisterCommand('txadmin', function()
   if menuIsAccessible then
-    toggleMenuVisibility()
+    -- Lets update before we open the menu
+    updateServerCtx()
+    sendMenuMessage('setDebugMode', isMenuDebug)
+    isMenuVisible = not isMenuVisible
+    SetNuiFocus(isMenuVisible, false)
+    SetNuiFocusKeepInput(isMenuVisible)
+    sendMenuMessage('setVisible', isMenuVisible)
   else
     sendSnackbarMessage('error', 'nui_menu.misc.menu_not_allowed', true)
   end
-end
-RegisterCommand('txadmin', txadmin)
-RegisterCommand('tx', txadmin)
+end)
+
+-- alias
+RegisterCommand('tx', function()
+  ExecuteCommand('txadmin')
+end)
 
 CreateThread(function()
-  TriggerEvent('chat:removeSuggestion', '/txadmin')
-  TriggerEvent('chat:removeSuggestion', '/tx')
+  TriggerEvent('chat:addSuggestion', '/txadmin', 'Open the txAdmin menu', {})
+  TriggerEvent('chat:addSuggestion', '/tx', 'Open the txAdmin menu', {})
 end)
--- end commands
-
 
 --[[
   NUI Callbacks from the menu
@@ -131,6 +109,10 @@ RegisterNUICallback('closeMenu', function(_, cb)
   cb({})
 end)
 
+local SoundEnum = {
+  move = 'NAV_UP_DOWN',
+  enter = 'SELECT'
+}
 
 RegisterNUICallback('playSound', function(sound, cb)
   PlaySoundFrontend(-1, SoundEnum[sound], 'HUD_FRONTEND_DEFAULT_SOUNDSET', 1)
@@ -167,7 +149,7 @@ RegisterNUICallback('tpBack', function(_, cb)
 end)
 
 RegisterNUICallback('summonPlayer', function(data, cb)
-  TriggerServerEvent('txAdmin:menu:summonPlayer', tonumber(data.id))
+  TriggerServerEvent('txAdmin:menu:summonPlayer', data.id)
   cb({})
 end)
 
@@ -182,19 +164,9 @@ end
 
 local function toggleFreecam(enabled)
   local ped = PlayerPedId()
-  SetEntityVisible(ped, not enabled)
   SetPlayerInvincible(ped, enabled)
-  FreezeEntityPosition(ped, enabled)
-  NetworkSetEntityInvisibleToNetwork(ped, enabled)
-  SetEntityCollision(ped, not enabled, not enabled)
-  
   local veh = GetVehiclePedIsIn(ped, true)
-  if veh == 0 then
-    veh = nil
-  else
-    NetworkSetEntityInvisibleToNetwork(veh, enabled)
-    SetEntityCollision(veh, not enabled, not enabled)
-  end
+  if veh == 0 then veh = nil end
   
   local function enableNoClip()
     lastTp = GetEntityCoords(ped)
@@ -202,11 +174,14 @@ local function toggleFreecam(enabled)
     SetFreecamActive(true)
     StartFreecamThread()
     
+    NetworkSetEntityInvisibleToNetwork(ped, true)
+    if veh then NetworkSetEntityInvisibleToNetwork(veh, true) end
+    
     Citizen.CreateThread(function()
       while IsFreecamActive() do
         SetEntityLocallyInvisible(ped)
         if veh then SetEntityLocallyInvisible(veh) end
-        Wait(0)
+        Wait(1)
       end
       
       if veh and veh > 0 then
@@ -219,6 +194,8 @@ local function toggleFreecam(enabled)
   
   local function disableNoClip()
     SetFreecamActive(false)
+    NetworkSetEntityInvisibleToNetwork(ped, false)
+    if veh then NetworkSetEntityInvisibleToNetwork(veh, false) end
     SetGameplayCamRelativeHeading(0)
   end
   
@@ -265,23 +242,19 @@ end)
 
 -- CB From Menu
 RegisterNUICallback('spawnVehicle', function(data, cb)
-  if type(data) ~= 'table' then error("Invalid spawnVehicle NUI callback data") end
   local model = data.model
-  if type(model) ~= 'string' then return end
-  if not IsModelValid(model) or not IsModelAVehicle(model) then
+  if not IsModelValid(model) then
     debugPrint("^1Invalid vehicle model requested: " .. model)
     cb({ e = true })
   else
-    local isAutomobile = IsThisModelACar(model)
-    if isAutomobile ~= false then isAutomobile = true end
-    TriggerServerEvent('txAdmin:menu:spawnVehicle', model, isAutomobile)
+    TriggerServerEvent('txAdmin:menu:spawnVehicle', model)
     cb({})
   end
 end)
 
 -- CB From Menu
 RegisterNUICallback('healPlayer', function(data, cb)
-  TriggerServerEvent('txAdmin:menu:healPlayer', tonumber(data.id))
+  TriggerServerEvent('txAdmin:menu:healPlayer', data.id)
   cb({})
 end)
 
@@ -321,50 +294,31 @@ end)
 -- Used to trigger the help alert
 AddEventHandler('playerSpawned', function()
   Wait(60000)
-  if menuIsAccessible then
-    sendMenuMessage('showMenuHelpInfo', {})
-  end
+  sendMenuMessage('showMenuHelpInfo', {})
 end)
-
---[[ Reauth ]]
-RegisterNetEvent('txAdmin:menu:reAuth', function()
-  menuIsAccessible = false
-  sendMenuMessage('reAuth')
-end)
-
-if debugModeEnabled then
-  -- Debugging command
-  RegisterCommand('txAdmin-reauth', function()
-    debugPrint("re-authing")
-    TriggerEvent('txAdmin:menu:reAuth')
-  end)
-end
 
 --[[ Player list sync ]]
 RegisterNetEvent('txAdmin:menu:setPlayerState', function(data)
   -- process data to add distance, remove pos
-  local pedCoords = GetEntityCoords(PlayerPedId())
   for i in ipairs(data) do
     local row = data[i]
     local targetVec = vec3(row.pos.x, row.pos.y, row.pos.z)
-    local dist = #(pedCoords - targetVec)
+    local dist = #(GetEntityCoords(PlayerPedId()) - targetVec)
       
     -- calculate the vehicle status
     local vehicleStatus = 'walking'
     if row.veh then
-      local vehEntity = NetToVeh(row.veh)
-      if not vehEntity or vehEntity == 0 then
-        vehicleStatus = 'unknown'
-      else
-        local vehClass = GetVehicleClass(vehEntity)
+      local veh = NetToVeh(row.veh)
+      if veh and veh > 0 then
+        local vehClass = GetVehicleClass(veh)
         if vehClass == 8 then
           vehicleStatus = 'biking'
         elseif vehClass == 14 then
           vehicleStatus = 'boating'
-          --elseif vehClass == 15 then
-          --  vehicleStatus = 'floating'
-          --elseif vehClass == 16 then
-          --  vehicleStatus = 'flying'
+        --elseif vehClass == 15 then
+        --  vehicleStatus = 'floating'
+        --elseif vehClass == 16 then
+        --  vehicleStatus = 'flying'
         else
           vehicleStatus = 'driving'
         end
@@ -385,26 +339,6 @@ RegisterNetEvent('txAdmin:menu:setPlayerState', function(data)
   })
 end)
 
---- Calculate a safe Z coordinate based off the (X, Y)
----@param x number
----@param y number
----@return number|nil
-local function FindZForCoords(x, y)
-  local found = true
-  local START_Z = 1500
-  local z = START_Z
-  while found and z > 0 do
-    local _found, _z = GetGroundZFor_3dCoord(x + 0.0, y + 0.0, z - 1.0)
-    if _found then
-      z = _z + 0.0
-    end
-    found = _found
-    Wait(0)
-  end
-  if z == START_Z then return nil end
-  return z + 0.0
-end
-
 --[[ Teleport the player to the coordinates ]]
 ---@param x number
 ---@param y number
@@ -413,13 +347,24 @@ RegisterNetEvent('txAdmin:menu:tpToCoords', function(x, y, z)
   local ped = PlayerPedId()
   lastTp = GetEntityCoords(ped)
   
-  DoScreenFadeOut(500)
-  while not IsScreenFadedOut() do Wait(0) end
-  ped = PlayerPedId()
+  DoScreenFadeOut(200)
+  while not IsScreenFadedOut() do Wait(1) end
+  
+  debugPrint('Teleporting to coords')
   if z == 0 then
-    local _z = FindZForCoords(x, y)
-    if _z ~= nil then z = _z end
+    for i = 0, 1000, 10 do
+      SetPedCoordsKeepVehicle(ped, x, y, i)
+      local zFound, _z = GetGroundZFor_3dCoord(x + 0.0, y + 0.0, i + 0.0)
+      if zFound then
+        debugPrint("3D ground found: " .. json.encode({ zFound, _z }))
+        z = _z
+        break
+      end
+      Wait(0)
+    end
   end
+  RequestCollisionAtCoord(x, y, z)
+  RequestAdditionalCollisionAtCoord(x, y, z)
   SetPedCoordsKeepVehicle(ped, x, y, z)
   DoScreenFadeIn(500)
   SetGameplayCamRelativeHeading(0)
@@ -432,15 +377,26 @@ RegisterNetEvent('txAdmin:menu:tpToWaypoint', function()
     local ped = PlayerPedId()
     lastTp = GetEntityCoords(ped)
     
-    DoScreenFadeOut(500)
-    while not IsScreenFadedOut() do Wait(0) end
+    DoScreenFadeOut(200)
+    while not IsScreenFadedOut() do Wait(1) end
     
     local blipCoords = GetBlipInfoIdCoord(waypoint)
+    debugPrint("waypoint blip: " .. json.encode(blipCoords))
     local x = blipCoords[1]
     local y = blipCoords[2]
-    local z = 0
-    local _z = FindZForCoords(x, y)
-    if _z ~= nil then z = _z end
+    local z = blipCoords[3]
+    for i = 0, 1000, 10 do
+      SetPedCoordsKeepVehicle(ped, x, y, i)
+      local zFound, _z = GetGroundZFor_3dCoord(x, y, i + 0.0)
+      if zFound then
+        debugPrint("3D ground found: " .. json.encode({ zFound, _z }))
+        z = _z
+        break
+      end
+      Wait(0)
+    end
+    RequestCollisionAtCoord(x, y, z)
+    RequestAdditionalCollisionAtCoord(x, y, z)
     SetPedCoordsKeepVehicle(ped, x, y, z)
     DoScreenFadeIn(500)
     SetGameplayCamRelativeHeading(0)
@@ -454,11 +410,11 @@ RegisterNetEvent('txAdmin:menu:healed', function()
   debugPrint('Received heal event, healing to full')
   local ped = PlayerPedId()
   local pos = GetEntityCoords(ped)
-  local heading = GetEntityHeading(ped)
   if IsEntityDead(ped) then
-    NetworkResurrectLocalPlayer(pos[1], pos[2], pos[3], heading, false, false)
+    ResurrectPed(ped)
+    ped = PlayerPedId()
+    SetEntityCoords(ped, pos[1], pos[2], pos[3])
   end
-  ped = PlayerPedId()
   SetEntityHealth(ped, GetEntityMaxHealth(ped))
 end)
 
@@ -477,6 +433,10 @@ end)
 
 --[[ Spawn vehicles, with support for entity lockdown ]]
 RegisterNetEvent('txAdmin:menu:spawnVehicle', function(netID)
+  debugPrint(json.encode({ netID = netID }))
+  SetNetworkIdExistsOnAllMachines(netID, true)
+  SetNetworkIdCanMigrate(netID, true)
+  
   -- get current veh and speed
   local ped = PlayerPedId()
   local oldVeh = GetVehiclePedIsIn(ped, false)
@@ -486,18 +446,27 @@ RegisterNetEvent('txAdmin:menu:spawnVehicle', function(netID)
   if oldVeh and IsPedInVehicle(ped, oldVeh, true) then
     debugPrint("Deleting existing vehicle (" .. oldVeh .. ")")
     DeleteVehicle(oldVeh)
+    SetEntityAsMissionEntity(oldVeh, true, true)
+    Citizen.InvokeNative(0xEA386986E786A54F, Citizen.PointerValueIntInitialized(oldVeh))
   end
   
   local tries = 0
-  while not NetworkDoesEntityExistWithNetworkId(netID) do
+  while NetworkGetEntityFromNetworkId(netID) == 0 do
+    if tries > 50 then
+      debugPrint("^1Vehicle (net ID " .. netID .. ") did not become networked for this client in time ("
+              .. (tries * 25) .. "ms)")
+      return
+    end
+    debugPrint("Waiting for vehicle networking...")
     tries = tries + 1
-    if tries > 250 then break end
-    Wait(10)
+    Wait(50)
   end
-  local veh = NetworkGetEntityFromNetworkId(netID)
-  if not veh or veh == 0 then error("Vehicle did not spawn") end
   
-  SetPedIntoVehicle(ped, veh, -1)
+  local veh = NetworkGetEntityFromNetworkId(netID)
+  debugPrint("Found networked vehicle " .. netID .. " (entity " .. veh .. ")")
+  SetVehicleHasBeenOwnedByPlayer(veh, true)
+  TaskWarpPedIntoVehicle(ped, veh, -1)
+  SetEntityHeading(veh, GetEntityHeading(ped))
   if oldVel > 0.0 then
     SetVehicleEngineOn(veh, true, true, false)
     SetVehicleForwardSpeed(veh, oldVel)
@@ -533,14 +502,5 @@ local function openWarningHandler(author, reason)
     end
   end)
 end
-
-CreateThread(function()
-  while true do
-    if isMenuVisible and IsPauseMenuActive() then
-      toggleMenuVisibility()
-    end
-    Wait(250)
-  end
-end)
 
 RegisterNetEvent('txAdminClient:warn', openWarningHandler)

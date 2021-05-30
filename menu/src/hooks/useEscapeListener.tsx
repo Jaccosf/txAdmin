@@ -6,7 +6,7 @@ import { useKeyboardNavContext } from "../provider/KeyboardNavProvider";
 /**
  * Attach a keyboard listener for escape, which will close the menu
  */
-export const useExitListener = () => {
+export const useEscapeListener = () => {
   const setVisible = useSetIsMenuVisible();
 
   const { disabledKeyNav } = useKeyboardNavContext()
@@ -14,7 +14,7 @@ export const useExitListener = () => {
   useEffect(() => {
     const keyHandler = (e: KeyboardEvent) => {
       if (disabledKeyNav) return
-      if (["Escape", "Backspace"].includes(e.code)) {
+      if (["Escape", "F1"].includes(e.code)) {
 
         if (!process.env.DEV_IN_GAME && process.env.NODE_ENV === "development") return
 

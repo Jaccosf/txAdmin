@@ -8,7 +8,6 @@ import {
 import { debugData } from "../utils/debugLog";
 
 export enum VehicleStatus {
-  Unknown = "unknown",
   Walking = "walking",
   Driving = "driving",
   // Hovering = "hovering", // helicopter
